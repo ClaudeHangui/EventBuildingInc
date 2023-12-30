@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">EventBuildingInc</string>
+    <string name="default_error">Cannot fetch data</string>
+    <string name="budget_range">$%s-%s</string>
+</resources>
