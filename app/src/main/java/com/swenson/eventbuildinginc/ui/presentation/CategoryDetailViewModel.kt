@@ -35,10 +35,10 @@ class CategoryDetailViewModel @Inject constructor(
             }
 
             is Resource.Error -> {
-                if (categoriesResult.data.isNullOrEmpty()) {
+                if (categoriesResult.data?.subcategories.isNullOrEmpty()) {
                     CategoryDetailScreenUiEvent.OnChangeErrorVisibility(true)
                 } else {
-                    CategoryDetailScreenUiEvent.ShowData(categoriesResult.data)
+                    CategoryDetailScreenUiEvent.ShowData(categoriesResult.data!!)
                 }
             }
         }
@@ -66,7 +66,12 @@ class CategoryDetailViewModel @Inject constructor(
         ) {
             when (event) {
                 is CategoryDetailScreenUiEvent.ShowData -> {
-                    setState(oldState.copy(isLoading = false, data = event.items))
+                    setState(oldState.copy(
+                        isLoading = false,
+                        data = event.dataSet.subcategories,
+                        overallMinBudget = event.dataSet.budgetRange.overallMinBudget,
+                        overAllMaxBudget = event.dataSet.budgetRange.overallMaxBudget
+                        ))
                 }
 
                 is CategoryDetailScreenUiEvent.OnChangeErrorVisibility -> {
@@ -85,9 +90,13 @@ class CategoryDetailViewModel @Inject constructor(
                 is CategoryDetailScreenUiEvent.OnItemChangeIconState -> {
                     val newList = oldState.data.toMutableList()
                     newList[event.index] = newList[event.index].copy(
-                        isCategorySaved = event.isSelectedCategorySaved
+                        isCategorySaved = event.isSelectedCategorySaved.saveCategoryEvent
                     )
-                    setState(oldState.copy(data = newList))
+                    setState(oldState.copy(
+                        data = newList,
+                        overallMinBudget = event.isSelectedCategorySaved.budgetRange.overallMinBudget,
+                        overAllMaxBudget = event.isSelectedCategorySaved.budgetRange.overallMaxBudget
+                        ))
                 }
             }
         }

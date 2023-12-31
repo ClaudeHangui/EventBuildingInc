@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -104,27 +105,13 @@ fun CategoryDetailScreen(
                         .padding(top = 6.dp, start = 36.dp, end = 36.dp)
                 )
 
-                Text(
-                    text = "-",
-                    style = TextStyle(
-                        color = Color.Black,
-                        fontSize = 36.sp,
-                        lineHeight = 50.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontFamily = MaterialTheme.typography.h3.fontFamily,
-                    ),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 36.dp)
-                )
-
                 when {
                     state.isLoading -> ContentWithProgress()
                     state.data.isNotEmpty() -> {
-                        Log.e("Details", "item size: ${state.data}")
                        CategoryDetailItem(
                            categoryId,
+                           state.overallMinBudget,
+                           state.overAllMaxBudget,
                            subCategories = state.data,
                            onIconCheckedChanged = { index, catId, parentId ->
                                viewModel.onItemIconChanged(index, catId, parentId)
@@ -156,25 +143,49 @@ fun ColumnScope.BackStackButton(onCLick: () -> Unit) {
 @Composable
 private fun CategoryDetailItem(
     parentCategory: Int,
+    minBudget: String,
+    maxBudget: String,
     subCategories: List<SubCategory>,
     onIconCheckedChanged: (Int, Int, Int) -> Unit
 ){
     val lazyListState = rememberLazyStaggeredGridState()
 
     Box {
-        LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Fixed(2),
-            modifier = Modifier
-                .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 16.dp)
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(top = 32.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalItemSpacing = 16.dp,
-            state = lazyListState,
-        ) {
-            itemsIndexed(items = subCategories) { index, subTask ->
-                CategoryDetailsCard(item = subTask, index, onIconCheckedChanged, parentCategory)
+        
+        Column() {
+            Text(
+                text = if (minBudget.isEmpty() && maxBudget.isEmpty()) "-" else stringResource(
+                    id = R.string.budget_range,
+                    minBudget,
+                    maxBudget
+                ),
+                style = TextStyle(
+                    color = Color.Black,
+                    fontSize = 36.sp,
+                    lineHeight = 50.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = MaterialTheme.typography.h3.fontFamily,
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 36.dp)
+            )
+
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Fixed(2),
+                modifier = Modifier
+                    .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 16.dp)
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(top = 32.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalItemSpacing = 16.dp,
+                state = lazyListState,
+            ) {
+                itemsIndexed(items = subCategories) { index, subTask ->
+                    CategoryDetailsCard(item = subTask, index, onIconCheckedChanged, parentCategory)
+                }
             }
         }
     }

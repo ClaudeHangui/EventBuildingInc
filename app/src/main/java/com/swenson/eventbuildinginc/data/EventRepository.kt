@@ -1,10 +1,14 @@
 package com.swenson.eventbuildinginc.data
 
 import com.swenson.eventbuildinginc.data.local.EventDao
+import com.swenson.eventbuildinginc.data.model.ParentCategoryBudgetRange
+import com.swenson.eventbuildinginc.data.model.ParentCategoryDetailUiModel
 import com.swenson.eventbuildinginc.data.model.SelectedSubcategoryItem
 import com.swenson.eventbuildinginc.data.model.SubCategory
 import com.swenson.eventbuildinginc.data.model.TaskCategoryItem
+import com.swenson.eventbuildinginc.data.model.UpdateParentCategoryDetailUiModel
 import com.swenson.eventbuildinginc.data.remote.EventsApi
+import com.swenson.eventbuildinginc.domain.FormatAmountUseCase
 import com.swenson.eventbuildinginc.domain.Resource
 import com.swenson.eventbuildinginc.util.IoDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
@@ -15,6 +19,7 @@ import javax.inject.Inject
 class EventRepository @Inject constructor(
     private val eventDao: EventDao,
     private val eventsApi: EventsApi,
+    private val formatAmountUseCase: FormatAmountUseCase,
     @IoDispatcher
     private val ioDispatcher: CoroutineDispatcher
 ) {
@@ -33,7 +38,7 @@ class EventRepository @Inject constructor(
         }
     }
 
-    suspend fun fetchAllSubCategories(parentCategoryId: Int): Resource<List<SubCategory>> {
+    suspend fun fetchAllSubCategories(parentCategoryId: Int): Resource<ParentCategoryDetailUiModel> {
         return try {
             val apiResponse = eventsApi.getTaskCategoriesDetail(parentCategoryId)
             apiResponse?.let {
@@ -55,7 +60,9 @@ class EventRepository @Inject constructor(
                     isSaved
                 )
             }
-            Resource.Success(result)
+
+            val budgetRange = getBudgetRange(parentCategoryId)
+            Resource.Success(ParentCategoryDetailUiModel(result, budgetRange))
         } catch (e: Exception){
             e.printStackTrace()
             val localResponse = eventDao.getAllSubTasks(parentCategoryId)
@@ -71,8 +78,32 @@ class EventRepository @Inject constructor(
                     isSaved
                 )
             }
-            Resource.Error(e.message ?: "An unknown error occurred.", result)
+
+            val budgetRange = getBudgetRange(parentCategoryId)
+            Resource.Error(e.message ?: "An unknown error occurred.", ParentCategoryDetailUiModel(
+                result, budgetRange
+            ))
         }
+    }
+
+    private suspend fun getBudgetRange(parentCategoryId: Int): ParentCategoryBudgetRange {
+        val budget = eventDao.getCurrentBudget(parentCategoryId)
+        val range = if (budget.isEmpty()){
+            ParentCategoryBudgetRange("", "")
+        } else {
+            val minBudget = budget.sumOf {
+                it.minBudget ?: 0
+            }
+
+            val maxBudget = budget.sumOf {
+                it.maxBudget ?: 0
+            }
+            ParentCategoryBudgetRange(
+                formatAmountUseCase.formatInt(minBudget),
+                formatAmountUseCase.formatInt(maxBudget)
+            )
+        }
+        return range
     }
 
     fun setCategoryStatus(categoryId: Int, parentId: Int) = flow {
@@ -82,7 +113,8 @@ class EventRepository @Inject constructor(
         } else {
             saveCategory(categoryId, parentId)
         }
-        emit(result)
+        val budgetRange = getBudgetRange(parentId)
+        emit(UpdateParentCategoryDetailUiModel(result, budgetRange))
     }.flowOn(ioDispatcher)
 
     private suspend fun saveCategory(categoryId: Int, parentId: Int) : Boolean {

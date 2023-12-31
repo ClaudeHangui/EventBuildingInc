@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.swenson.eventbuildinginc.data.model.EventBudgetRange
 import com.swenson.eventbuildinginc.data.model.SelectedSubcategoryItem
 import com.swenson.eventbuildinginc.data.model.TaskCategoryDetailItem
 import com.swenson.eventbuildinginc.data.model.TaskCategoryItem
@@ -11,7 +12,7 @@ import com.swenson.eventbuildinginc.data.model.TaskCategoryItem
 @Dao
 interface EventDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertAllTasks(taskCategory:  List<TaskCategoryItem>)
+    fun insertAllTasks(taskCategory: List<TaskCategoryItem>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAllTasksDetails(taskCategoryDetail: List<TaskCategoryDetailItem>)
@@ -30,4 +31,7 @@ interface EventDao {
 
     @Query("select exists (select 1 from SelectedSubcategories where child_category = :catId)")
     suspend fun isSubcategoryAlreadySelected(catId: Int): Int
+
+    @Query("select min_budget, max_budget from TaskCategoryDetail inner join SelectedSubcategories on TaskCategoryDetail.id = SelectedSubcategories.child_category where TaskCategoryDetail.parent_category = :parentCat")
+    suspend fun getCurrentBudget(parentCat: Int): List<EventBudgetRange>
 }

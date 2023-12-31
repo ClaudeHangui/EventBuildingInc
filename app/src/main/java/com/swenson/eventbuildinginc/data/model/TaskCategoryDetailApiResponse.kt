@@ -22,3 +22,8 @@ data class TaskCategoryDetailItem(
     val title: String,
     @ColumnInfo (name = "parent_category") var parentCategory: Int
 )
+
+data class EventBudgetRange (
+    @ColumnInfo(name = "min_budget") val minBudget: Int?,
+    @ColumnInfo(name = "max_budget") val maxBudget: Int?
+)

@@ -105,8 +105,10 @@ class CoreDI {
 
         @Provides
         fun provideRepository(
-            dao: EventDao, api: EventsApi, @IoDispatcher ioDispatcher: CoroutineDispatcher
-        ): EventRepository = EventRepository(dao, api, ioDispatcher)
+            dao: EventDao, api: EventsApi,
+            formatAmountUseCase: FormatAmountUseCase,
+            @IoDispatcher ioDispatcher: CoroutineDispatcher
+        ): EventRepository = EventRepository(dao, api, formatAmountUseCase, ioDispatcher)
     }
 }
 
