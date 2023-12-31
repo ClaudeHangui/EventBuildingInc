@@ -5,7 +5,7 @@ import com.swenson.eventbuildinginc.data.model.ParentCategoryBudgetRange
 import com.swenson.eventbuildinginc.data.model.ParentCategoryDetailUiModel
 import com.swenson.eventbuildinginc.data.model.SelectedSubcategoryItem
 import com.swenson.eventbuildinginc.data.model.SubCategory
-import com.swenson.eventbuildinginc.data.model.TaskCategoryItem
+import com.swenson.eventbuildinginc.data.model.TaskCategoryUiModel
 import com.swenson.eventbuildinginc.data.model.UpdateParentCategoryDetailUiModel
 import com.swenson.eventbuildinginc.data.remote.EventsApi
 import com.swenson.eventbuildinginc.domain.FormatAmountUseCase
@@ -23,17 +23,25 @@ class EventRepository @Inject constructor(
     @IoDispatcher
     private val ioDispatcher: CoroutineDispatcher
 ) {
-    suspend fun fetchAllCategories(): Resource<List<TaskCategoryItem>> {
+    suspend fun fetchAllCategories(): Resource<List<TaskCategoryUiModel>> {
         return try {
             val response = eventsApi.getTaskCategories()
             response?.let {
                 eventDao.insertAllTasks(it)
             }
-            val result = eventDao.getAllTasks()
+            val tasks = eventDao.getAllTasks()
+            val result = tasks.map {
+                val count = eventDao.getSubcategoriesSelectedCount(it.id)
+                TaskCategoryUiModel(it.id, it.image, it.title, count)
+            }
             Resource.Success(result)
         } catch (e: Exception) {
             e.printStackTrace()
-            val result = eventDao.getAllTasks()
+            val tasks = eventDao.getAllTasks()
+            val result = tasks.map {
+                val count = eventDao.getSubcategoriesSelectedCount(it.id)
+                TaskCategoryUiModel(it.id, it.image, it.title, count)
+            }
             Resource.Error(e.message ?: "An unknown error occurred.", result)
         }
     }

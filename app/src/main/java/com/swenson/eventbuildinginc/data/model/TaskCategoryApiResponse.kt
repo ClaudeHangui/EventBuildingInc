@@ -6,7 +6,22 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "TaskCategory")
 data class TaskCategoryItem(
-    @PrimaryKey val id: Int,
-    val image: String,
-    val title: String
-)
+    @PrimaryKey
+    override val id: Int,
+    override val image: String,
+    override val title: String
+):TaskCategory()
+
+abstract class TaskCategory {
+    abstract val id: Int
+    abstract val image: String
+    abstract val title: String
+}
+
+data class TaskCategoryUiModel(
+    override val id: Int,
+    override val image: String,
+    override val title: String,
+    val subcategoriesSelectedCount: Int = 0
+): TaskCategory()
+

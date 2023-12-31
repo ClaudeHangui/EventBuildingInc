@@ -34,4 +34,10 @@ interface EventDao {
 
     @Query("select min_budget, max_budget from TaskCategoryDetail inner join SelectedSubcategories on TaskCategoryDetail.id = SelectedSubcategories.child_category where TaskCategoryDetail.parent_category = :parentCat")
     suspend fun getCurrentBudget(parentCat: Int): List<EventBudgetRange>
+
+    @Query("select exists (select 1 from SelectedSubcategories where parent_category = :parentId)")
+    suspend fun isParentCategorySelected(parentId: Int): Int
+
+    @Query("select count(*) from SelectedSubcategories where parent_category = :parentId")
+    suspend fun getSubcategoriesSelectedCount(parentId: Int): Int
 }
