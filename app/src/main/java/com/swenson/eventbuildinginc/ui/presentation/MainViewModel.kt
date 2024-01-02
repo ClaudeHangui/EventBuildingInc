@@ -1,6 +1,5 @@
 package com.swenson.eventbuildinginc.ui.presentation
 
-import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.swenson.eventbuildinginc.data.EventRepository
 import com.swenson.eventbuildinginc.ui.base.BaseReducer
@@ -11,8 +10,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 
@@ -35,14 +34,25 @@ class MainViewModel @Inject constructor(
     }
 
     fun getAllTasks() = viewModelScope.launch(ioDispatcher) {
-        var collectCount = 0
         repository.fetchAllEvents().catch {
-            println("throwable: $it")
             it.printStackTrace()
-            sendEvent(MainScreenUiEvent.OnChangeErrorVisibility(true))
-        }.collectLatest { list ->
-            println("collect count: ${++collectCount}")
-            sendEvent(MainScreenUiEvent.ShowData(list))
+            withContext(mainDispatcher){
+                sendEvent(MainScreenUiEvent.OnChangeErrorVisibility(true))
+            }
+        }.collect { list ->
+            withContext(mainDispatcher){
+                sendEvent(MainScreenUiEvent.ShowData(list))
+            }
+        }
+    }
+
+    fun checkSavedEvents() = viewModelScope.launch {
+        repository.hasUserSavedAtLeastOneEvent().collect {
+            if (it == 1){
+                sendEvent(MainScreenUiEvent.OpenEventSummaryScreen)
+            } else {
+                sendEvent(MainScreenUiEvent.RequestUserToSaveEvent)
+            }
         }
     }
 
@@ -58,7 +68,10 @@ class MainViewModel @Inject constructor(
                     setState(
                         oldState.copy(
                             isLoading = false,
-                            data = event.items
+                            data = event.items.list,
+                            averageBudget = event.items.averageBudget,
+                            openEventSummary = false,
+                            requestUserToSaveEvent = false
                         )
                     )
                 }
@@ -66,7 +79,9 @@ class MainViewModel @Inject constructor(
                     setState(
                         oldState.copy(
                             isLoading = !event.showError,
-                            showError = event.showError
+                            showError = event.showError,
+                            openEventSummary = false,
+                            requestUserToSaveEvent = false
                         )
                     )
                 }
@@ -74,12 +89,31 @@ class MainViewModel @Inject constructor(
                     setState(
                         oldState.copy(
                             isLoading = true,
-                            showError = false
+                            showError = false,
+                            openEventSummary = false,
+                            requestUserToSaveEvent = false
                         )
                     )
                 }
-                else -> {
-                    //
+                is MainScreenUiEvent.OpenEventSummaryScreen -> {
+                    setState(
+                        oldState.copy(
+                            isLoading = false,
+                            showError = false,
+                            openEventSummary = true,
+                            requestUserToSaveEvent = false
+                        )
+                    )
+                }
+                is MainScreenUiEvent.RequestUserToSaveEvent -> {
+                    setState(
+                        oldState.copy(
+                            isLoading = false,
+                            showError = false,
+                            openEventSummary = false,
+                            requestUserToSaveEvent = true,
+                        )
+                    )
                 }
             }
         }

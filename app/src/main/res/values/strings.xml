@@ -3,4 +3,7 @@
     <string name="default_error">Cannot fetch data</string>
     <string name="budget_range">$%s-%s</string>
     <string name="retry">RETRY</string>
+    <string name="average_budget">$%s</string>
+    <string name="event_saved">Event Saved !</string>
+    <string name="save_event">You need to first save an event.</string>
 </resources>

@@ -64,7 +64,17 @@ data class TaskCategoryDetailUiModel(
     val isItemSelected: Boolean = false
 ): TaskCategoryDetail()
 
+abstract class BudgetRange {
+    abstract val minBudget: Int?
+    abstract val maxBudget: Int?
+}
 data class CategoryBudgetRange (
-    @ColumnInfo(name = "min_budget") val minBudget: Int?,
-    @ColumnInfo(name = "max_budget") val maxBudget: Int?
+    @ColumnInfo(name = "min_budget") override val minBudget: Int?,
+    @ColumnInfo(name = "max_budget") override val maxBudget: Int?
+): BudgetRange()
+
+
+data class OverallBudgetRange(
+    val minBudget: String,
+    val maxBudget: String
 )

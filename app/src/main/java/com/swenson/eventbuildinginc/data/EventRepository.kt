@@ -1,8 +1,10 @@
 package com.swenson.eventbuildinginc.data
 
 import com.swenson.eventbuildinginc.data.local.EventDao
+import com.swenson.eventbuildinginc.data.model.OverallBudgetRange
 import com.swenson.eventbuildinginc.data.model.ParentCategoryBudgetRange
 import com.swenson.eventbuildinginc.data.model.ParentCategoryDetailUiModel
+import com.swenson.eventbuildinginc.data.model.ParentCategoryUiModel
 import com.swenson.eventbuildinginc.data.model.TaskCategoryDetailLocal
 import com.swenson.eventbuildinginc.data.model.TaskCategoryLocal
 import com.swenson.eventbuildinginc.data.model.UpdateParentCategoryDetailUiModel
@@ -24,8 +26,11 @@ class EventRepository @Inject constructor(
     private val ioDispatcher: CoroutineDispatcher
 ) {
 
-    fun fetchAllEvents() = eventDao.getAllTasks().onEach {
-        if (it.isEmpty()) {
+    fun fetchAllEvents() = eventDao.getAllTasks().map {
+        val average = getOverallAverageBudgetForSelectedItems()
+        ParentCategoryUiModel(it, average)
+    }.onEach {
+        if (it.list.isEmpty()) {
             println("empty")
             refreshEventList()
         } else {
@@ -45,14 +50,15 @@ class EventRepository @Inject constructor(
 
     fun getAllItemsForTask(parentTask: Int) = eventDao.getAllSubTasks(parentTask).map {
         println("hourray")
-        if (it.isEmpty()){
+        val budgetRange = getBudgetRange(parentTask)
+        ParentCategoryDetailUiModel(it, budgetRange)
+    }.onEach {
+        if (it.subcategories.isEmpty()) {
             println("empty")
             refreshSubtaskList(parentTask)
         } else {
             println("non-empty")
         }
-        val budgetRange = getBudgetRange(parentTask)
-        ParentCategoryDetailUiModel(it, budgetRange)
     }
 
     private suspend fun refreshSubtaskList(parentTask: Int) {
@@ -65,8 +71,8 @@ class EventRepository @Inject constructor(
     }
 
     private suspend fun getBudgetRange(parentCategoryId: Int): ParentCategoryBudgetRange {
-        val budget = eventDao.getCurrentEstimatedBudget(parentCategoryId)
-        val range = if (budget.isEmpty()){
+        val budget = eventDao.getCurrentEstimatedBudgetForCategory(parentCategoryId)
+        val range = if (budget.isEmpty()) {
             ParentCategoryBudgetRange("", "")
         } else {
             val minBudget = budget.sumOf {
@@ -101,7 +107,7 @@ class EventRepository @Inject constructor(
 
     private suspend fun addItemToSavedList(parentId: Int, childId: Int): Boolean {
         val parentCatExists = eventDao.checkIfCategoryAlreadyExists(parentId)
-        val isCategorySaved = if (parentCatExists == 1){
+        val isCategorySaved = if (parentCatExists == 1) {
             eventDao.updateSelectedCount(parentId)
         } else {
             val newTask = TaskCategoryLocal(parentId, 1)
@@ -109,7 +115,7 @@ class EventRepository @Inject constructor(
         }
 
         val childCatExists = eventDao.checkIfItemHasBeenSaved(childId)
-        val isItemSaved = if (childCatExists == 1){
+        val isItemSaved = if (childCatExists == 1) {
             eventDao.markItemAsSaved(childId)
         } else {
             val newChildCategory = TaskCategoryDetailLocal(childId, parentId, true)
@@ -118,4 +124,36 @@ class EventRepository @Inject constructor(
 
         return (isCategorySaved > 0) && (isItemSaved > 0)
     }
+
+    private suspend fun getOverallAverageBudgetForSelectedItems(): String {
+        val average = eventDao.getOverallAverageBudget()
+        println("average: $average")
+        return if (average.isEmpty()) {
+            ""
+        } else {
+            formatAmountUseCase.formatDouble(average.average())
+        }
+    }
+
+    suspend fun getOverallBudgetEstimateForSelectedItems(): OverallBudgetRange {
+        val budgetEstimate = eventDao.getOverallEstimatedBudgetRange()
+        return if (budgetEstimate.isEmpty()){
+            OverallBudgetRange("","")
+        } else {
+            val minBudget = budgetEstimate.sumOf {
+                it.minBudget ?: 0
+            }
+
+            val maxBudget = budgetEstimate.sumOf {
+                it.maxBudget ?: 0
+            }
+
+            OverallBudgetRange(
+                formatAmountUseCase.formatInt(minBudget),
+                formatAmountUseCase.formatInt(maxBudget)
+            )
+        }
+    }
+
+    fun hasUserSavedAtLeastOneEvent() = eventDao.hasUserSavedAtLeastOneItem()
 }

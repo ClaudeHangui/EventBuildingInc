@@ -1,9 +1,7 @@
-@file:OptIn(ExperimentalAnimationApi::class)
 
 package com.swenson.eventbuildinginc.ui.view
 
-import android.util.Log
-import androidx.compose.animation.ExperimentalAnimationApi
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,16 +18,13 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.rememberScaffoldState
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -50,14 +46,13 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.swenson.eventbuildinginc.R
+import com.swenson.eventbuildinginc.data.model.TaskCategoryUiModel
 import com.swenson.eventbuildinginc.ui.presentation.Destinations
 import com.swenson.eventbuildinginc.ui.presentation.MainViewModel
 import com.swenson.eventbuildinginc.ui.view.components.CategoryCard
 import com.swenson.eventbuildinginc.ui.view.components.ContentWithProgress
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CategoriesScreen(
     navController: NavController,
@@ -65,23 +60,19 @@ fun CategoriesScreen(
 ) {
     val myScaffoldState = rememberScaffoldState()
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val lazyListState = rememberLazyStaggeredGridState()
-
+    val context = LocalContext.current
 
     val lifecycleEvent = rememberLifecycleEvent()
-    LaunchedEffect(lifecycleEvent) {
+    LaunchedEffect(key1 = lifecycleEvent, key2 = state.requestUserToSaveEvent) {
         if (lifecycleEvent == Lifecycle.Event.ON_RESUME) {
             // initiate data reloading
-            Log.e("Home", "resume")
             viewModel.getAllTasks()
         }
+
+        if (state.requestUserToSaveEvent){
+            Toast.makeText(context, context.getString(R.string.save_event), Toast.LENGTH_SHORT).show()
+        }
     }
-
-    /*
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
-    */
-
 
 
     Scaffold(scaffoldState = myScaffoldState) { paddingValues ->
@@ -127,50 +118,24 @@ fun CategoriesScreen(
                         .padding(top = 6.dp, start = 36.dp, end = 36.dp)
                 )
 
-                Text(
-                    text = "-",
-                    style = TextStyle(
-                        color = Color.Black,
-                        fontSize = 36.sp,
-                        lineHeight = 50.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontFamily = MaterialTheme.typography.h3.fontFamily,
-                    ),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 36.dp)
-                )
-
                 println("state : $state")
 
                 when {
                     state.isLoading -> ContentWithProgress()
-                    state.data.isNotEmpty() -> {
-                        LazyVerticalStaggeredGrid(
-                            columns = StaggeredGridCells.Fixed(2),
-                            modifier = Modifier
-                                .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 16.dp)
-                                .fillMaxWidth()
-                                .wrapContentHeight()
-                                .padding(top = 32.dp)
-
-                            ,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalItemSpacing = 16.dp,
-                            state = lazyListState,
-                        ) {
-                            val dataSet = state.data
-                            items(items = dataSet) { task ->
-                                CategoryCard(item = task){
-                                    navController.navigate(
-                                        Destinations.CategoryDetails.route + "/${task.id}/${task.title}"
-                                    )
-                                }
-                            }
-                        }
+                    state.openEventSummary -> {
+                        navController.navigate(Destinations.SavedEvent.route)
                     }
-
+                    state.data.isNotEmpty() -> {
+                        CategoryListSection(
+                            overallAverageBudget = state.averageBudget,
+                            categories = state.data,
+                            onCategoryClick = { categoryId, name ->
+                                navController.navigate(
+                                    Destinations.CategoryDetails.route + "/${categoryId}/${name}"
+                                )
+                            }
+                        )
+                    }
                     state.showError -> {
                         Text(
                             text = stringResource(id = R.string.default_error),
@@ -214,11 +179,12 @@ fun CategoriesScreen(
                         }
                     }
                 }
-
             }
 
             Button(
-                onClick = {},
+                onClick = {
+                    viewModel.checkSavedEvents()
+                },
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF5DA3A9)),
                 modifier = Modifier
                     .padding(16.dp)
@@ -257,4 +223,56 @@ fun rememberLifecycleEvent(lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.
         }
     }
     return state
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun CategoryListSection(
+    overallAverageBudget: String,
+    categories: List<TaskCategoryUiModel>,
+    onCategoryClick: (Int, String) -> Unit
+) {
+    val lazyListState = rememberLazyStaggeredGridState()
+    Box(
+        contentAlignment = Alignment.Center
+    ) {
+        Column() {
+            Text(
+                text = if (overallAverageBudget.isEmpty()) "-" else stringResource(
+                    id = R.string.average_budget, overallAverageBudget
+                ),
+                style = TextStyle(
+                    color = Color.Black,
+                    fontSize = 36.sp,
+                    lineHeight = 50.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = MaterialTheme.typography.h3.fontFamily,
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 36.dp)
+            )
+
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Fixed(2),
+                modifier = Modifier
+                    .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 16.dp)
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(top = 32.dp)
+
+                ,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalItemSpacing = 16.dp,
+                state = lazyListState,
+            ) {
+                items(items = categories) { task ->
+                    CategoryCard(item = task){
+                        onCategoryClick(task.id, task.title)
+                    }
+                }
+            }
+        }
+    }
 }

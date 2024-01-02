@@ -52,5 +52,14 @@ interface EventDao {
     suspend fun checkIfItemHasBeenSaved(childId: Int): Int
 
     @Query("select min_budget, max_budget from TaskCategoryDetailRemote inner join TaskCategoryDetailLocal on TaskCategoryDetailRemote.id = TaskCategoryDetailLocal.id where TaskCategoryDetailRemote.parent_category = :parentCat and is_item_selected = 1")
-    suspend fun getCurrentEstimatedBudget(parentCat: Int): List<CategoryBudgetRange>
+    suspend fun getCurrentEstimatedBudgetForCategory(parentCat: Int): List<CategoryBudgetRange>
+
+    @Query("select average_budget from TaskCategoryDetailRemote inner join TaskCategoryDetailLocal on TaskCategoryDetailRemote.id = TaskCategoryDetailLocal.id where is_item_selected = 1")
+    suspend fun getOverallAverageBudget(): List<Int>
+
+    @Query("select min_budget, max_budget from TaskCategoryDetailRemote inner join TaskCategoryDetailLocal on TaskCategoryDetailRemote.id = TaskCategoryDetailLocal.id where is_item_selected = 1")
+    suspend fun getOverallEstimatedBudgetRange(): List<CategoryBudgetRange>
+
+    @Query("select exists (select 1 from TaskCategoryDetailLocal where is_item_selected = 1)")
+    fun hasUserSavedAtLeastOneItem(): Flow<Int>
 }

@@ -63,6 +63,7 @@ class CategoryDetailViewModel @Inject constructor(
                     setState(oldState.copy(
                         isLoading = false,
                         data = event.dataSet.subcategories,
+                        showError = false,
                         overallMinBudget = event.dataSet.budgetRange.overallMinBudget,
                         overAllMaxBudget = event.dataSet.budgetRange.overallMaxBudget
                         ))

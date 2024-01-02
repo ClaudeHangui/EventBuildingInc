@@ -17,3 +17,8 @@ data class UpdateParentCategoryDetailUiModel(
     val saveCategoryEvent: Boolean,
     override val budgetRange: ParentCategoryBudgetRange
 ): CategoryDetailUiModel()
+
+data class ParentCategoryUiModel(
+    val list: List<TaskCategoryUiModel>,
+    val averageBudget: String
+)

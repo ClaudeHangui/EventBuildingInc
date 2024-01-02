@@ -6,7 +6,7 @@ sealed class Destinations (val route: String){
         val categoryId = "categoryId"
         val categoryName = "categoryName"
     }
-
+    object SavedEvent: Destinations("saved_event")
     fun withArgsFormat(vararg args: String) : String {
         return buildString {
             append(route)
