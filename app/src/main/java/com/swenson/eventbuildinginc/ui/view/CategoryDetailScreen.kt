@@ -2,7 +2,6 @@
 
 package com.swenson.eventbuildinginc.ui.view
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +17,9 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
@@ -40,7 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swenson.eventbuildinginc.R
-import com.swenson.eventbuildinginc.data.model.SubCategory
+import com.swenson.eventbuildinginc.data.model.TaskCategoryDetailUiModel
 import com.swenson.eventbuildinginc.ui.presentation.CategoryDetailViewModel
 import com.swenson.eventbuildinginc.ui.view.components.CategoryDetailsCard
 import com.swenson.eventbuildinginc.ui.view.components.ContentWithProgress
@@ -104,7 +106,7 @@ fun CategoryDetailScreen(
                         .align(Alignment.CenterHorizontally)
                         .padding(top = 6.dp, start = 36.dp, end = 36.dp)
                 )
-
+                println("state : $state")
                 when {
                     state.isLoading -> ContentWithProgress()
                     state.data.isNotEmpty() -> {
@@ -113,10 +115,14 @@ fun CategoryDetailScreen(
                            state.overallMinBudget,
                            state.overAllMaxBudget,
                            subCategories = state.data,
-                           onIconCheckedChanged = { index, catId, parentId ->
-                               viewModel.onItemIconChanged(index, catId, parentId)
+                           onIconCheckedChanged = { index, catId, parentId, addItemToList ->
+                               viewModel.onItemIconChanged(index, catId, parentId, addItemToList)
                            }
                        )
+                    }
+                    state.showError -> ErrorScreen {
+                        viewModel.changeErrorVisibilityState(false)
+                        viewModel.getAllSubcategories(categoryId)
                     }
                 }
             }
@@ -141,12 +147,55 @@ fun ColumnScope.BackStackButton(onCLick: () -> Unit) {
 }
 
 @Composable
+fun ColumnScope.ErrorScreen(onRetry: () -> Unit){
+    Text(
+        text = stringResource(id = R.string.default_error),
+        style = TextStyle(
+            color = Color.Black,
+            fontSize = 24.sp,
+            lineHeight = 40.sp,
+            fontWeight = FontWeight.ExtraBold,
+            fontFamily = MaterialTheme.typography.h3.fontFamily,
+        ),
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .align(Alignment.CenterHorizontally)
+            .padding(top = 92.dp)
+    )
+
+    val mainButtonColor = ButtonDefaults.buttonColors(
+        backgroundColor = Color.DarkGray,
+        contentColor = MaterialTheme.colors.onSurface
+    )
+
+    Button(
+        colors = mainButtonColor,
+        onClick = {
+            onRetry()
+        },
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier
+            .align(Alignment.CenterHorizontally)
+            .padding(24.dp)
+    ) {
+        Text(
+            text = stringResource(id = R.string.retry),
+            color = Color.White,
+            modifier = Modifier.padding(
+                start = 10.dp,
+                end = 10.dp
+            )
+        )
+    }
+}
+
+@Composable
 private fun CategoryDetailItem(
     parentCategory: Int,
     minBudget: String,
     maxBudget: String,
-    subCategories: List<SubCategory>,
-    onIconCheckedChanged: (Int, Int, Int) -> Unit
+    subCategories: List<TaskCategoryDetailUiModel>,
+    onIconCheckedChanged: (Int, Int, Int, Boolean) -> Unit
 ){
     val lazyListState = rememberLazyStaggeredGridState()
 

@@ -3,17 +3,17 @@ package com.swenson.eventbuildinginc.data
 import com.swenson.eventbuildinginc.data.local.EventDao
 import com.swenson.eventbuildinginc.data.model.ParentCategoryBudgetRange
 import com.swenson.eventbuildinginc.data.model.ParentCategoryDetailUiModel
-import com.swenson.eventbuildinginc.data.model.SelectedSubcategoryItem
-import com.swenson.eventbuildinginc.data.model.SubCategory
-import com.swenson.eventbuildinginc.data.model.TaskCategoryUiModel
+import com.swenson.eventbuildinginc.data.model.TaskCategoryDetailLocal
+import com.swenson.eventbuildinginc.data.model.TaskCategoryLocal
 import com.swenson.eventbuildinginc.data.model.UpdateParentCategoryDetailUiModel
 import com.swenson.eventbuildinginc.data.remote.EventsApi
 import com.swenson.eventbuildinginc.domain.FormatAmountUseCase
-import com.swenson.eventbuildinginc.domain.Resource
 import com.swenson.eventbuildinginc.util.IoDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 class EventRepository @Inject constructor(
@@ -23,79 +23,49 @@ class EventRepository @Inject constructor(
     @IoDispatcher
     private val ioDispatcher: CoroutineDispatcher
 ) {
-    suspend fun fetchAllCategories(): Resource<List<TaskCategoryUiModel>> {
-        return try {
-            val response = eventsApi.getTaskCategories()
-            response?.let {
-                eventDao.insertAllTasks(it)
-            }
-            val tasks = eventDao.getAllTasks()
-            val result = tasks.map {
-                val count = eventDao.getSubcategoriesSelectedCount(it.id)
-                TaskCategoryUiModel(it.id, it.image, it.title, count)
-            }
-            Resource.Success(result)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            val tasks = eventDao.getAllTasks()
-            val result = tasks.map {
-                val count = eventDao.getSubcategoriesSelectedCount(it.id)
-                TaskCategoryUiModel(it.id, it.image, it.title, count)
-            }
-            Resource.Error(e.message ?: "An unknown error occurred.", result)
+
+    fun fetchAllEvents() = eventDao.getAllTasks().onEach {
+        if (it.isEmpty()) {
+            println("empty")
+            refreshEventList()
+        } else {
+            println("non-empty")
         }
     }
 
-    suspend fun fetchAllSubCategories(parentCategoryId: Int): Resource<ParentCategoryDetailUiModel> {
-        return try {
-            val apiResponse = eventsApi.getTaskCategoriesDetail(parentCategoryId)
-            apiResponse?.let {
-                it.map { item ->
-                    item.parentCategory = parentCategoryId
-                }
-                eventDao.insertAllTasksDetails(it)
-            }
-            val localResponse = eventDao.getAllSubTasks(parentCategoryId)
-            val result = localResponse.map {
-                val isSaved = isCategoryAlreadySaved(it.id)
-                SubCategory(
-                    it.id,
-                    it.avgBudget,
-                    it.image,
-                    it.maxBudget,
-                    it.minBudget,
-                    it.title,
-                    isSaved
-                )
-            }
 
-            val budgetRange = getBudgetRange(parentCategoryId)
-            Resource.Success(ParentCategoryDetailUiModel(result, budgetRange))
-        } catch (e: Exception){
-            e.printStackTrace()
-            val localResponse = eventDao.getAllSubTasks(parentCategoryId)
-            val result = localResponse.map {
-                val isSaved = isCategoryAlreadySaved(it.id)
-                SubCategory(
-                    it.id,
-                    it.avgBudget,
-                    it.image,
-                    it.maxBudget,
-                    it.minBudget,
-                    it.title,
-                    isSaved
-                )
+    private suspend fun refreshEventList() {
+        eventsApi.getTaskCategories().also { categories ->
+            categories?.let {
+                eventDao.insertAllTasks(categories)
             }
+        }
+    }
 
-            val budgetRange = getBudgetRange(parentCategoryId)
-            Resource.Error(e.message ?: "An unknown error occurred.", ParentCategoryDetailUiModel(
-                result, budgetRange
-            ))
+
+    fun getAllItemsForTask(parentTask: Int) = eventDao.getAllSubTasks(parentTask).map {
+        println("hourray")
+        if (it.isEmpty()){
+            println("empty")
+            refreshSubtaskList(parentTask)
+        } else {
+            println("non-empty")
+        }
+        val budgetRange = getBudgetRange(parentTask)
+        ParentCategoryDetailUiModel(it, budgetRange)
+    }
+
+    private suspend fun refreshSubtaskList(parentTask: Int) {
+        eventsApi.getTaskCategoriesDetail(parentTask).also { subCategories ->
+            subCategories?.let {
+                it.map { item -> item.parentCategory = parentTask }
+                eventDao.insertAllTasksDetails(subCategories)
+            }
         }
     }
 
     private suspend fun getBudgetRange(parentCategoryId: Int): ParentCategoryBudgetRange {
-        val budget = eventDao.getCurrentBudget(parentCategoryId)
+        val budget = eventDao.getCurrentEstimatedBudget(parentCategoryId)
         val range = if (budget.isEmpty()){
             ParentCategoryBudgetRange("", "")
         } else {
@@ -111,27 +81,41 @@ class EventRepository @Inject constructor(
                 formatAmountUseCase.formatInt(maxBudget)
             )
         }
+        println("budget range")
         return range
     }
 
-    fun setCategoryStatus(categoryId: Int, parentId: Int) = flow {
-        val result = if (isCategoryAlreadySaved(categoryId)){
-            eventDao.removeSelectedSubcategory(categoryId, parentId)
-            false
+    fun updateItemSelectedStatus(categoryId: Int, parentId: Int, addItemToList: Boolean) = flow {
+        val result = if (addItemToList) {
+            addItemToSavedList(parentId, categoryId)
         } else {
-            saveCategory(categoryId, parentId)
+            val count = eventDao.decrementSelectedCount(parentId)
+            val isUnsaved = eventDao.markItemAsUnSaved(categoryId)
+            count <= 0 && isUnsaved <= 0
         }
+        println("updateItemSelectedStatus: $result")
+
         val budgetRange = getBudgetRange(parentId)
         emit(UpdateParentCategoryDetailUiModel(result, budgetRange))
     }.flowOn(ioDispatcher)
 
-    private suspend fun saveCategory(categoryId: Int, parentId: Int) : Boolean {
-        val itemSaved = eventDao.insertSelectedSubcategory(SelectedSubcategoryItem(categoryId, parentId))
-        return itemSaved != 0L
-    }
+    private suspend fun addItemToSavedList(parentId: Int, childId: Int): Boolean {
+        val parentCatExists = eventDao.checkIfCategoryAlreadyExists(parentId)
+        val isCategorySaved = if (parentCatExists == 1){
+            eventDao.updateSelectedCount(parentId)
+        } else {
+            val newTask = TaskCategoryLocal(parentId, 1)
+            eventDao.insertSelectedCount(newTask).toInt()
+        }
 
-    private suspend fun isCategoryAlreadySaved(categoryId: Int): Boolean {
-        val isItemExist = eventDao.isSubcategoryAlreadySelected(categoryId)
-        return isItemExist == 1
+        val childCatExists = eventDao.checkIfItemHasBeenSaved(childId)
+        val isItemSaved = if (childCatExists == 1){
+            eventDao.markItemAsSaved(childId)
+        } else {
+            val newChildCategory = TaskCategoryDetailLocal(childId, parentId, true)
+            eventDao.insertChildCategory(newChildCategory).toInt()
+        }
+
+        return (isCategorySaved > 0) && (isItemSaved > 0)
     }
 }

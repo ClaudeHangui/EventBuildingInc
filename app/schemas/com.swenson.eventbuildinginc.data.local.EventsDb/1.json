@@ -2,10 +2,10 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "1d79bad8275a7f63a4279b5c21214cca",
+    "identityHash": "10c954c471bce7e8078f42724f04aaae",
     "entities": [
       {
-        "tableName": "TaskCategory",
+        "tableName": "TaskCategoryRemote",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `image` TEXT NOT NULL, `title` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
@@ -37,15 +37,36 @@
         "foreignKeys": []
       },
       {
-        "tableName": "TaskCategoryDetail",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`average_budget` INTEGER NOT NULL, `id` INTEGER NOT NULL, `image` TEXT NOT NULL, `max_budget` INTEGER NOT NULL, `min_budget` INTEGER NOT NULL, `title` TEXT NOT NULL, `parent_category` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`parent_category`) REFERENCES `TaskCategory`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "tableName": "TaskCategoryLocal",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `sub_categories_selected_count` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`))",
         "fields": [
           {
-            "fieldPath": "avgBudget",
-            "columnName": "average_budget",
+            "fieldPath": "id",
+            "columnName": "id",
             "affinity": "INTEGER",
             "notNull": true
           },
+          {
+            "fieldPath": "subcategoriesSelectedCount",
+            "columnName": "sub_categories_selected_count",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "TaskCategoryDetailRemote",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `image` TEXT NOT NULL, `title` TEXT NOT NULL, `min_budget` INTEGER NOT NULL, `max_budget` INTEGER NOT NULL, `average_budget` INTEGER NOT NULL, `parent_category` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`parent_category`) REFERENCES `TaskCategoryRemote`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
@@ -59,9 +80,9 @@
             "notNull": true
           },
           {
-            "fieldPath": "maxBudget",
-            "columnName": "max_budget",
-            "affinity": "INTEGER",
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -71,9 +92,15 @@
             "notNull": true
           },
           {
-            "fieldPath": "title",
-            "columnName": "title",
-            "affinity": "TEXT",
+            "fieldPath": "maxBudget",
+            "columnName": "max_budget",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "avgBudget",
+            "columnName": "average_budget",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -92,7 +119,7 @@
         "indices": [],
         "foreignKeys": [
           {
-            "table": "TaskCategory",
+            "table": "TaskCategoryRemote",
             "onDelete": "NO ACTION",
             "onUpdate": "NO ACTION",
             "columns": [
@@ -105,26 +132,33 @@
         ]
       },
       {
-        "tableName": "SelectedSubcategories",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`child_category` INTEGER NOT NULL, `parent_category` INTEGER NOT NULL, PRIMARY KEY(`child_category`, `parent_category`))",
+        "tableName": "TaskCategoryDetailLocal",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `parent_category` INTEGER NOT NULL, `is_item_selected` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`, `parent_category`))",
         "fields": [
           {
-            "fieldPath": "childCategoryId",
-            "columnName": "child_category",
+            "fieldPath": "id",
+            "columnName": "id",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "parentCategoryId",
+            "fieldPath": "parentCategory",
             "columnName": "parent_category",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "isItemSelected",
+            "columnName": "is_item_selected",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
           }
         ],
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "child_category",
+            "id",
             "parent_category"
           ]
         },
@@ -135,7 +169,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1d79bad8275a7f63a4279b5c21214cca')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '10c954c471bce7e8078f42724f04aaae')"
     ]
   }
 }

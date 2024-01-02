@@ -1,6 +1,5 @@
 package com.swenson.eventbuildinginc.ui.presentation
 
-import com.swenson.eventbuildinginc.data.model.TaskCategoryItem
 import com.swenson.eventbuildinginc.data.model.TaskCategoryUiModel
 import com.swenson.eventbuildinginc.ui.base.UiEvent
 import com.swenson.eventbuildinginc.ui.base.UiState

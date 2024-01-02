@@ -1,7 +1,7 @@
 package com.swenson.eventbuildinginc.ui.presentation
 
 import com.swenson.eventbuildinginc.data.model.ParentCategoryDetailUiModel
-import com.swenson.eventbuildinginc.data.model.SubCategory
+import com.swenson.eventbuildinginc.data.model.TaskCategoryDetailUiModel
 import com.swenson.eventbuildinginc.data.model.UpdateParentCategoryDetailUiModel
 import com.swenson.eventbuildinginc.ui.base.UiEvent
 import com.swenson.eventbuildinginc.ui.base.UiState
@@ -18,7 +18,7 @@ sealed class CategoryDetailScreenUiEvent: UiEvent {
 @Immutable
 data class CategoryDetailScreenState(
     val isLoading: Boolean,
-    val data: List<SubCategory>,
+    val data: List<TaskCategoryDetailUiModel>,
     val showError: Boolean,
     val overallMinBudget: String,
     val overAllMaxBudget: String

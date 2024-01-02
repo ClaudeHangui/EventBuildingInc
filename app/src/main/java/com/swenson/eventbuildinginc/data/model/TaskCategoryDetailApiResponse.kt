@@ -6,24 +6,65 @@ import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 
 
-@Entity(tableName = "TaskCategoryDetail",
+abstract class TaskCategoryDetail {
+    abstract val id: Int
+    abstract val image: String
+    abstract val title: String
+    abstract val minBudget: Int
+    abstract val maxBudget: Int
+    abstract val avgBudget: Int
+    abstract var parentCategory:Int
+}
+
+@Entity(tableName = "TaskCategoryDetailRemote",
     foreignKeys = [ForeignKey(
-        entity = TaskCategoryItem::class,
+        entity = TaskCategoryRemote::class,
         childColumns = ["parent_category"],
         parentColumns = ["id"]
     )]
     )
-data class TaskCategoryDetailItem(
-    @ColumnInfo (name = "average_budget") val avgBudget: Int,
-    @PrimaryKey val id: Int,
-    val image: String,
-    @ColumnInfo (name = "max_budget") val maxBudget: Int,
-    @ColumnInfo (name = "min_budget") val minBudget: Int,
-    val title: String,
-    @ColumnInfo (name = "parent_category") var parentCategory: Int
+data class TaskCategoryDetailRemote(
+    @PrimaryKey override val id: Int,
+    override val image: String,
+    override val title: String,
+    @ColumnInfo (name = "min_budget") override val minBudget: Int,
+    @ColumnInfo (name = "max_budget") override val maxBudget: Int,
+    @ColumnInfo (name = "average_budget") override val avgBudget: Int,
+    @ColumnInfo (name = "parent_category") override var parentCategory: Int
+): TaskCategoryDetail()
+
+
+@Entity(tableName = "TaskCategoryDetailLocal",
+    primaryKeys = [ "id", "parent_category"]
+)
+data class TaskCategoryDetailLocal(
+    val id: Int,
+    @ColumnInfo (name = "parent_category") var parentCategory: Int,
+    @ColumnInfo(name = "is_item_selected", defaultValue = "0")
+    val isItemSelected: Boolean
 )
 
-data class EventBudgetRange (
+
+data class TaskCategoryDetailUiModel(
+    @ColumnInfo(name = "id")
+    override val id: Int,
+    @ColumnInfo(name = "image")
+    override val image: String,
+    @ColumnInfo(name = "title")
+    override val title: String,
+    @ColumnInfo(name = "min_budget")
+    override val minBudget: Int,
+    @ColumnInfo(name = "max_budget")
+    override val maxBudget: Int,
+    @ColumnInfo(name = "average_budget")
+    override val avgBudget: Int,
+    @ColumnInfo(name = "parent_category")
+    override var parentCategory: Int,
+    @ColumnInfo(name = "is_item_selected")
+    val isItemSelected: Boolean = false
+): TaskCategoryDetail()
+
+data class CategoryBudgetRange (
     @ColumnInfo(name = "min_budget") val minBudget: Int?,
     @ColumnInfo(name = "max_budget") val maxBudget: Int?
 )

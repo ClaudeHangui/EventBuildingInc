@@ -13,13 +13,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat
-import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.swenson.eventbuildinginc.ui.presentation.AppNavHost
 import com.swenson.eventbuildinginc.ui.theme.EventBuildingIncTheme
@@ -45,16 +43,6 @@ class MainActivity : ComponentActivity() {
                             navController = navController)
                     }
                 )
-                /*
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    AppNavHost(navController = navController)
-                    //AppNavHost(modifier = Modifier.fillMaxSize(), navController = navController)
-                    CategoriesScreen(navController = navController)
-                }
-                */
             }
         }
         hideSystemUI()

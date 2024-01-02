@@ -83,7 +83,7 @@ dependencies {
     implementation(libs.bundles.network.deps)
     implementation(libs.room.ktx)
     implementation("com.github.skydoves:sandwich:2.0.5")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
     kapt(libs.hilt.compiler)
     kapt(libs.room.compiler)
     testImplementation(libs.bundles.local.test.deps)

@@ -75,5 +75,6 @@ Napp/src/main/java/com/swenson/eventbuildinginc/ui/view/CategoryDetailScreen.kt
 Yapp/src/main/java/com/swenson/eventbuildinginc/ui/presentation/CategoryDetailViewModel.kt,e/c/ecc587c0f00a2f15cd588639d631eb9bb1a1003f
 ~
 Napp/src/main/java/com/swenson/eventbuildinginc/data/model/TaskCategoryModel.kt,a/1/a11274e89db16cfb3cc347cb01742811fa428b6a
-}
-Mapp/src/main/java/com/swenson/eventbuildinginc/data/model/EventBudgetRange.kt,4/8/485e8af3c66ca9ecd803beeee67a1ec11bf053b7
+:
+
+.gitignore,a/5/a5cc2925ca8258af241be7e5b0381edf30266302

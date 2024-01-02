@@ -29,13 +29,13 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import coil.compose.AsyncImage
 import com.swenson.eventbuildinginc.R
-import com.swenson.eventbuildinginc.data.model.SubCategory
+import com.swenson.eventbuildinginc.data.model.TaskCategoryDetailUiModel
 
 @Composable
 fun CategoryDetailsCard(
-    item: SubCategory,
+    item: TaskCategoryDetailUiModel,
     indexPosition: Int,
-    onIconCheckedChanged: (Int, Int, Int) -> Unit,
+    onIconCheckedChanged: (Int, Int, Int, Boolean) -> Unit,
     parentCategory: Int, ){
     Card(
         shape = RoundedCornerShape(10.dp),
@@ -111,7 +111,7 @@ fun CategoryDetailsCard(
                     .clip(CircleShape)
                     .background(Color(R.color.semi_black))
                     .clickable {
-                        onIconCheckedChanged(indexPosition, item.id, parentCategory)
+                        onIconCheckedChanged(indexPosition, item.id, parentCategory, !item.isItemSelected)
                     }
                     .padding(8.dp)
                     .constrainAs(currentIcon) {
@@ -119,7 +119,7 @@ fun CategoryDetailsCard(
                         end.linkTo(backgroundImage.end)
                     }
             ){
-                val iconRes = if (item.isCategorySaved) R.drawable.white_tick else R.drawable.white_cross
+                val iconRes = if (item.isItemSelected) R.drawable.white_tick else R.drawable.white_cross
                 Icon(
                     tint = Color.White,
                     painter = painterResource(id = iconRes),

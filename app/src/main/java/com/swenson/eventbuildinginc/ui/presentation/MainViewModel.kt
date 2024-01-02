@@ -1,8 +1,8 @@
 package com.swenson.eventbuildinginc.ui.presentation
 
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.swenson.eventbuildinginc.data.EventRepository
-import com.swenson.eventbuildinginc.domain.Resource
 import com.swenson.eventbuildinginc.ui.base.BaseReducer
 import com.swenson.eventbuildinginc.ui.base.BaseViewModel
 import com.swenson.eventbuildinginc.util.IoDispatcher
@@ -10,8 +10,9 @@ import com.swenson.eventbuildinginc.util.MainDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 
@@ -27,29 +28,21 @@ class MainViewModel @Inject constructor(
     override val state: StateFlow<MainScreenState>
         get() = reducer.state
 
-    init {
-        getAllTasks()
-    }
+
 
     fun changeErrorVisibilityState(show: Boolean){
         sendEvent(MainScreenUiEvent.OnChangeErrorVisibility(show))
     }
 
-    fun getAllTasks() = viewModelScope.launch(ioDispatcher){
-        val result = when(val categoriesResult = repository.fetchAllCategories()){
-            is Resource.Success -> {
-                MainScreenUiEvent.ShowData(categoriesResult.data!!)
-            }
-            is Resource.Error -> {
-                if (categoriesResult.data.isNullOrEmpty()){
-                    MainScreenUiEvent.OnChangeErrorVisibility(true)
-                } else {
-                    MainScreenUiEvent.ShowData(categoriesResult.data)
-                }
-            }
-        }
-        withContext(mainDispatcher){
-            sendEvent(result)
+    fun getAllTasks() = viewModelScope.launch(ioDispatcher) {
+        var collectCount = 0
+        repository.fetchAllEvents().catch {
+            println("throwable: $it")
+            it.printStackTrace()
+            sendEvent(MainScreenUiEvent.OnChangeErrorVisibility(true))
+        }.collectLatest { list ->
+            println("collect count: ${++collectCount}")
+            sendEvent(MainScreenUiEvent.ShowData(list))
         }
     }
 
