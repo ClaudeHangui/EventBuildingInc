@@ -63,7 +63,7 @@ fun CategoriesScreen(
     val context = LocalContext.current
 
     val lifecycleEvent = rememberLifecycleEvent()
-    LaunchedEffect(key1 = lifecycleEvent, key2 = state.requestUserToSaveEvent) {
+    LaunchedEffect(key1 = lifecycleEvent, key2 = state.requestUserToSaveEvent, key3 = state.openEventSummary) {
         if (lifecycleEvent == Lifecycle.Event.ON_RESUME) {
             // initiate data reloading
             viewModel.getAllTasks()
@@ -71,6 +71,10 @@ fun CategoriesScreen(
 
         if (state.requestUserToSaveEvent){
             Toast.makeText(context, context.getString(R.string.save_event), Toast.LENGTH_SHORT).show()
+        }
+
+        if (state.openEventSummary){
+            navController.navigate(Destinations.SavedEvent.route)
         }
     }
 
@@ -122,9 +126,6 @@ fun CategoriesScreen(
 
                 when {
                     state.isLoading -> ContentWithProgress()
-                    state.openEventSummary -> {
-                        navController.navigate(Destinations.SavedEvent.route)
-                    }
                     state.data.isNotEmpty() -> {
                         CategoryListSection(
                             overallAverageBudget = state.averageBudget,

@@ -1,5 +1,6 @@
 package com.swenson.eventbuildinginc.ui.view
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -32,7 +33,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swenson.eventbuildinginc.R
 import com.swenson.eventbuildinginc.data.model.OverallBudgetRange
 import com.swenson.eventbuildinginc.ui.presentation.EstimatedBudgetViewModel
-import com.swenson.eventbuildinginc.ui.view.components.BackPressHandler
 import com.swenson.eventbuildinginc.ui.view.components.ContentWithProgress
 
 @Composable
@@ -44,9 +44,9 @@ fun SavedEventScreen(
     val myScaffoldState = rememberScaffoldState()
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    BackPressHandler(onBackPressed = {
+    BackHandler(true) {
         navigateBack()
-    })
+    }
 
     Scaffold(scaffoldState = myScaffoldState) { paddingValues ->
         Box(

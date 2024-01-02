@@ -96,7 +96,7 @@ fun AppNavHost(modifier: Modifier, navController: NavHostController) {
         composable(
             route = Destinations.SavedEvent.route,
             enterTransition = {
-                when(initialState.destination.route){
+                when (initialState.destination.route) {
                     Destinations.Categories.route -> enterTransition
                     else -> null
                 }
@@ -106,10 +106,19 @@ fun AppNavHost(modifier: Modifier, navController: NavHostController) {
                     Destinations.Categories.route -> exitTransition
                     else -> null
                 }
+            },
+            popExitTransition = {
+                when (initialState.destination.route) {
+                    Destinations.Categories.route -> popExitTransition
+                    else -> null
+                }
             }
-        ){  navBackStackEntry ->
+
+        ) { navBackStackEntry ->
             SavedEventScreen(
-                navigateBack = { navController.popBackStack() }
+                navigateBack = {
+                    navController.popBackStack(Destinations.Categories.route, inclusive = false)
+                },
             )
         }
     }
