@@ -28,7 +28,7 @@ interface EventDao {
     fun getAllSubTasks(catId: Int): Flow<List<TaskCategoryDetailUiModel>>
 
     @Query("update TaskCategoryLocal set sub_categories_selected_count = sub_categories_selected_count + 1 where id = :parentId")
-    suspend fun updateSelectedCount(parentId: Int) : Int
+    suspend fun updateSelectedCount(parentId: Int): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSelectedCount(newTask: TaskCategoryLocal): Long

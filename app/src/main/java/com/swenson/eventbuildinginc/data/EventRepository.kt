@@ -31,10 +31,7 @@ class EventRepository @Inject constructor(
         ParentCategoryUiModel(it, average)
     }.onEach {
         if (it.list.isEmpty()) {
-            println("empty")
             refreshEventList()
-        } else {
-            println("non-empty")
         }
     }
 
@@ -49,15 +46,11 @@ class EventRepository @Inject constructor(
 
 
     fun getAllItemsForTask(parentTask: Int) = eventDao.getAllSubTasks(parentTask).map {
-        println("hourray")
         val budgetRange = getBudgetRange(parentTask)
         ParentCategoryDetailUiModel(it, budgetRange)
     }.onEach {
         if (it.subcategories.isEmpty()) {
-            println("empty")
             refreshSubtaskList(parentTask)
-        } else {
-            println("non-empty")
         }
     }
 
@@ -87,7 +80,6 @@ class EventRepository @Inject constructor(
                 formatAmountUseCase.formatInt(maxBudget)
             )
         }
-        println("budget range")
         return range
     }
 

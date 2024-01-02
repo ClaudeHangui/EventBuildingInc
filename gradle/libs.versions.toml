@@ -20,6 +20,7 @@ retrofit = "2.9.0"
 gson = "2.10.1"
 roomKtx = "2.5.0"
 coil = "2.2.2"
+lifecycleRuntimeCompose = "2.6.2"
 
 
 
@@ -35,6 +36,7 @@ core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleKtx" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleKtx" }
+lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleRuntimeCompose" }
 
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
@@ -77,6 +79,7 @@ androidx-core-deps = [
     "lifecycle-runtime-ktx",
     "activity-compose",
     "viewmodel-compose",
+    "lifecycle-runtime-compose"
 ]
 
 jetpack-compose-deps = [
