@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "10c954c471bce7e8078f42724f04aaae",
+    "identityHash": "caa2510ed8882177de652ba18495295c",
     "entities": [
       {
         "tableName": "TaskCategoryRemote",
@@ -116,7 +116,17 @@
             "id"
           ]
         },
-        "indices": [],
+        "indices": [
+          {
+            "name": "index_TaskCategoryDetailRemote_parent_category",
+            "unique": false,
+            "columnNames": [
+              "parent_category"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_TaskCategoryDetailRemote_parent_category` ON `${TABLE_NAME}` (`parent_category`)"
+          }
+        ],
         "foreignKeys": [
           {
             "table": "TaskCategoryRemote",
@@ -133,7 +143,7 @@
       },
       {
         "tableName": "TaskCategoryDetailLocal",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `parent_category` INTEGER NOT NULL, `is_item_selected` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`, `parent_category`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `parent_category` INTEGER NOT NULL, PRIMARY KEY(`id`, `parent_category`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -146,13 +156,6 @@
             "columnName": "parent_category",
             "affinity": "INTEGER",
             "notNull": true
-          },
-          {
-            "fieldPath": "isItemSelected",
-            "columnName": "is_item_selected",
-            "affinity": "INTEGER",
-            "notNull": true,
-            "defaultValue": "0"
           }
         ],
         "primaryKey": {
@@ -169,7 +172,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '10c954c471bce7e8078f42724f04aaae')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'caa2510ed8882177de652ba18495295c')"
     ]
   }
 }

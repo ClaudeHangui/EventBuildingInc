@@ -6,6 +6,7 @@ import com.swenson.eventbuildinginc.data.model.ParentCategoryBudgetRange
 import com.swenson.eventbuildinginc.data.model.ParentCategoryDetailUiModel
 import com.swenson.eventbuildinginc.data.model.ParentCategoryUiModel
 import com.swenson.eventbuildinginc.data.model.TaskCategoryDetailLocal
+import com.swenson.eventbuildinginc.data.model.TaskCategoryDetailUiModel
 import com.swenson.eventbuildinginc.data.model.TaskCategoryLocal
 import com.swenson.eventbuildinginc.data.model.UpdateParentCategoryDetailUiModel
 import com.swenson.eventbuildinginc.data.remote.EventsApi
@@ -47,7 +48,16 @@ class EventRepository @Inject constructor(
 
     fun getAllItemsForTask(parentTask: Int) = eventDao.getAllSubTasks(parentTask).map {
         val budgetRange = getBudgetRange(parentTask)
-        ParentCategoryDetailUiModel(it, budgetRange)
+        val uiModel = it.map { item ->
+            TaskCategoryDetailUiModel(
+                item.id, item.image, item.title, item.minBudget, item.maxBudget, item.avgBudget, item.parentCategory
+            )
+        }
+        uiModel.forEach { item ->
+            item.isItemSelected = isItemAlreadySaved(item.id)
+        }
+
+        ParentCategoryDetailUiModel(uiModel, budgetRange)
     }.onEach {
         if (it.subcategories.isEmpty()) {
             refreshSubtaskList(parentTask)
@@ -88,7 +98,7 @@ class EventRepository @Inject constructor(
             addItemToSavedList(parentId, categoryId)
         } else {
             val count = eventDao.decrementSelectedCount(parentId)
-            val isUnsaved = eventDao.markItemAsUnSaved(categoryId)
+            val isUnsaved = eventDao.markItemAsUnSaved(categoryId, parentId)
             count <= 0 && isUnsaved <= 0
         }
         println("updateItemSelectedStatus: $result")
@@ -98,23 +108,22 @@ class EventRepository @Inject constructor(
     }.flowOn(ioDispatcher)
 
     private suspend fun addItemToSavedList(parentId: Int, childId: Int): Boolean {
-        val parentCatExists = eventDao.checkIfCategoryAlreadyExists(parentId)
-        val isCategorySaved = if (parentCatExists == 1) {
-            eventDao.updateSelectedCount(parentId)
+        val childCatExists = isItemAlreadySaved(childId)
+        return if (childCatExists){
+            false
         } else {
-            val newTask = TaskCategoryLocal(parentId, 1)
-            eventDao.insertSelectedCount(newTask).toInt()
-        }
+            val newChildCategory = TaskCategoryDetailLocal(childId, parentId)
+            val isItemSaved = eventDao.insertChildCategory(newChildCategory).toInt()
 
-        val childCatExists = eventDao.checkIfItemHasBeenSaved(childId)
-        val isItemSaved = if (childCatExists == 1) {
-            eventDao.markItemAsSaved(childId)
-        } else {
-            val newChildCategory = TaskCategoryDetailLocal(childId, parentId, true)
-            eventDao.insertChildCategory(newChildCategory).toInt()
+            val parentCatExists = eventDao.checkIfCategoryAlreadyExists(parentId)
+            val isCountUpdated = if (parentCatExists == 1) {
+                eventDao.updateSelectedCount(parentId)
+            } else {
+                val newTask = TaskCategoryLocal(parentId, 1)
+                eventDao.insertSelectedCount(newTask).toInt()
+            }
+            (isItemSaved > 0) && (isCountUpdated > 0)
         }
-
-        return (isCategorySaved > 0) && (isItemSaved > 0)
     }
 
     private suspend fun getOverallAverageBudgetForSelectedItems(): String {
@@ -148,4 +157,8 @@ class EventRepository @Inject constructor(
     }
 
     fun hasUserSavedAtLeastOneEvent() = eventDao.hasUserSavedAtLeastOneItem()
+
+    private suspend fun isItemAlreadySaved(id: Int): Boolean {
+        return eventDao.checkIfItemHasBeenSaved(id) == 1
+    }
 }
